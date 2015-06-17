@@ -28,6 +28,9 @@ namespace Simulator {
         std::vector<FPU*>           m_fpus;
         std::vector<IIOBus*>        m_iobuses;
         std::vector<Object*>        m_devices;
+        
+        // Simulator status for visualisation
+        int                         m_status;
 
         SymbolTable                 m_symtable;
         BreakPointManager           m_breakpoints;
@@ -90,6 +93,10 @@ namespace Simulator {
         // Steps the entire system this many cycles
         void Step(CycleNo nCycles);
         void Abort() { GetKernel().Abort(); }
+        
+        // Simulator status for visualisation
+        void SetStatus(int status) { m_status = status; }
+        int GetStatus() { return m_status; }
 
         MGSystem(Config& config, bool quiet);
         MGSystem(const MGSystem&) = delete;

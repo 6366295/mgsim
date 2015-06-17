@@ -55,6 +55,9 @@ public:
     char* GetCommandLine(const std::string& prompt);
     void CheckPointHistory();
 
+    // Resume simulator, when visualisation says so
+    int resume;
+    int step;
 };
 
 std::vector<std::string> Tokenize(const std::string& str, const std::string& sep);

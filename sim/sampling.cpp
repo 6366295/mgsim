@@ -207,3 +207,30 @@ BinarySampler::BinarySampler(ostream& os, const Config& config,
     }
     os << "# recwidth: " << m_datasize << endl;
 }
+
+// NEW: New function for getting samples of selected variables
+vars_vector GetSelectedVariableSamples(const std::vector<std::string>& pats)
+{
+    varvec_t vars;
+    vars_vector vars_vec;
+
+    for(auto& i : pats)
+    {
+        for(auto& j : registry)
+        {
+            if(FNM_NOMATCH == fnmatch(i.c_str(), j.first.c_str(), 0))
+                continue;
+            vars.push_back(make_pair(&j.first, &j.second));
+        }
+    }
+
+    if(vars.size() >= 2)
+        sort(vars.begin()+1, vars.end(), comparevars);
+
+    for(auto& i : vars)
+    {
+        vars_vec.push_back(make_pair(make_pair(i.first ,(const void*)i.second->var), make_pair(i.second->type, i.second->width)));
+    }
+
+    return vars_vec;
+}

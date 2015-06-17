@@ -6,10 +6,19 @@
 #include <string>
 #include <cstdlib>
 
+#include <sys/select.h>
+#include <sys/types.h>
+
 #if defined(HAVE_LIBREADLINE) && !defined(HAVE_READLINE_READLINE_H)
 extern "C" {
 char *cmdline = NULL;
 }
+#endif
+
+#ifdef HAVE_LIBREADLINE
+static void cb_linehandler (char *);
+int select_running;
+char * callback_char;
 #endif
 
 using namespace Simulator;
@@ -41,7 +50,9 @@ int CommandLineReader::ReadLineHook(void) {
 }
 
 CommandLineReader::CommandLineReader()
-    : m_histfilename() {
+    : m_histfilename(),
+      resume(1),
+      step(0) {
 #ifdef HAVE_LIBREADLINE
     rl_event_hook = &ReadLineHook;
 # ifdef HAVE_READLINE_HISTORY
@@ -63,7 +74,58 @@ CommandLineReader::~CommandLineReader() {
 char* CommandLineReader::GetCommandLine(const string& prompt)
 {
 #ifdef HAVE_LIBREADLINE
-    char* str = readline(prompt.c_str());
+    struct timeval tv;
+    fd_set fds;
+    int activity;
+
+    select_running = 1;
+    tv = {0, 100};
+    
+    rl_callback_handler_install(prompt.c_str(), cb_linehandler);
+    
+    // Check readline, while checking visualisation resume commands
+    while(select_running)
+    {
+        // Source: http://tiswww.case.edu/php/chet/readline/readline.html#SEC43
+        FD_ZERO(&fds);
+        FD_SET(fileno(rl_instream), &fds);    
+
+        activity = select(FD_SETSIZE, &fds, NULL, NULL, &tv);
+
+        // Ignores any signal, because system interupt is called everytime
+        if(activity == -1)
+            continue;
+
+        // If resume is set from visualisation return run command to run simulation
+        // This can be expanded to more commands
+        if(resume == 0)
+        {
+            rl_callback_handler_remove();
+            char * str = new char;
+            strcpy(str, "run");
+            
+            resume = 1;
+            
+            return str;
+        }
+        else if(resume == 2)
+        {
+            rl_callback_handler_remove();
+            char * str = new char;
+            strcpy(str, ("step " + to_string(step)).c_str());
+            
+            resume = 1;
+            
+            return str;
+        }
+
+        if (FD_ISSET(fileno (rl_instream), &fds))
+            rl_callback_read_char();
+    }
+
+    char* str = callback_char;
+    //char* str = readline(prompt.c_str());
+
 # ifdef HAVE_READLINE_HISTORY
     if (str != NULL && *str != '\0')
     {
@@ -113,3 +175,12 @@ vector<string> Tokenize(const string& str, const string& sep)
     return tokens;
 }
 
+#ifdef HAVE_LIBREADLINE
+static void cb_linehandler(char *line)
+{
+    callback_char = (char*) line;
+    select_running = 0;
+
+    rl_callback_handler_remove();
+}
+#endif

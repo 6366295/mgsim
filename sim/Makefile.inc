@@ -29,7 +29,12 @@ SIM_SOURCES = \
 	sim/storagetrace.h \
         sim/storagetrace.cpp \
 	sim/types.h \
-        sim/unreachable.h
+        sim/unreachable.h \
+        sim/communicator.cpp \
+        sim/communicator.h \
+        sim/messageprocessor.cpp \
+        sim/messageprocessor.h
+        
  
 
 

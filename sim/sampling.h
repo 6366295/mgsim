@@ -72,4 +72,8 @@ public:
     }
 };
 
+typedef std::vector<std::pair<std::pair<const std::string* ,const void*>, std::pair<SampleVariableDataType, size_t>>> vars_vector;
+
+vars_vector GetSelectedVariableSamples(const std::vector<std::string>& pats);
+
 #endif

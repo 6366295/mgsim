@@ -11,6 +11,7 @@
 #include <sim/rusage.h>
 #include <sim/sampling.h>
 #include <sim/monitor.h>
+#include "sim/communicator.h"
 
 #include <sstream>
 #include <iostream>
@@ -37,6 +38,7 @@ struct ProgramConfig
     string                           m_configFile;
     bool                             m_enableMonitor;
     bool                             m_interactive;
+    bool                             m_visual;
     bool                             m_terminate;
     bool                             m_dumpconf;
     bool                             m_dumpcache;
@@ -57,6 +59,7 @@ struct ProgramConfig
           m_configFile(MGSIM_CONFIG_PATH),
           m_enableMonitor(false),
           m_interactive(false),
+          m_visual(false),
           m_terminate(false),
           m_dumpconf(false),
           m_dumpcache(false),
@@ -112,6 +115,7 @@ static const char *mgsim_doc =
 static const struct argp_option mgsim_options[] =
 {
     { "interactive", 'i', 0, 0, "Start the simulator in interactive mode.", 0 },
+    { "visual", 'g', 0, 0, "Start the simulator in visualisation mode.", 0 },
 
     { 0, 'R', "NUM VALUE", 0, "Store the integer VALUE in the specified register of the initial thread.", 1 },
     { 0, 'F', "NUM VALUE", 0, "Store the float VALUE in the specified FP register of the initial thread.", 1 },
@@ -167,6 +171,7 @@ static error_t mgsim_parse_opt(int key, char *arg, struct argp_state *state)
     break;
     case 'c': config.m_configFile = arg; break;
     case 'i': config.m_interactive = true; break;
+    case 'g': config.m_visual = true; break;
     case 't': config.m_terminate = true; break;
     case 'q': config.m_quiet = true; break;
     case 's': cerr << "# Warning: ignoring obsolete flag '-s'" << endl; break;
@@ -305,6 +310,7 @@ int main(int argc, char** argv)
     UNIQUE_PTR<Config> config;
     UNIQUE_PTR<MGSystem> sys;
     UNIQUE_PTR<Monitor> mo;
+    UNIQUE_PTR<Communicator> comm;
 
     ////
     // Early initialization.
@@ -478,6 +484,9 @@ int main(int argc, char** argv)
 
     // Otherwise, the simulation should start.
 
+    CommandLineReader clr;
+    comm.reset(new Communicator(*sys, &clr, flags.m_visual, flags.m_quiet));
+
     ////
     // Start the simulation.
 
@@ -529,7 +538,6 @@ int main(int argc, char** argv)
         {
             // Command loop
             cout << endl;
-            CommandLineReader clr;
             cli_context ctx = { clr, *sys, *mo };
 
             while (HandleCommandLine(ctx) == false)

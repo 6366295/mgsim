@@ -35,7 +35,9 @@ void StepSystem(Simulator::MGSystem& system, Simulator::CycleNo cycles)
 
     try
     {
+        system.SetStatus(1);
         system.Step(cycles);
+        system.SetStatus(0);
     }
     catch (...)
     {
